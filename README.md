@@ -182,9 +182,3 @@ Particularly useful contributions include:
 -   Cases where two curves cross more than once
 -   Cases where smoothing changes the crossing structure
 -   Better ways to validate and extract the faces of the planar network
-
-## License
-
-No license has been selected yet. Until a license is added, do not
-assume that the project is open source or that others have permission to
-redistribute or modify it.

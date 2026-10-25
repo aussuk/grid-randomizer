@@ -240,7 +240,14 @@ button:disabled { cursor: wait; opacity: .6; }
   background: #fafbf9;
 }
 
-#artwork { display: block; width: 100%; height: auto; }
+#artwork {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: zoom-in;
+}
+
+#artwork:focus-visible { outline: 3px solid #84c7a9; outline-offset: -3px; }
 
 .stage-foot {
   display: flex;
@@ -250,6 +257,93 @@ button:disabled { cursor: wait; opacity: .6; }
   color: #78837d;
   font-size: 11px;
   line-height: 1.5;
+}
+
+#imageViewer {
+  width: min(1100px, calc(100vw - 24px));
+  max-width: none;
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  padding: 14px;
+  border: 1px solid #e1e6e0;
+  border-radius: 14px;
+  color: #17211e;
+  background: #fff;
+  box-shadow: 0 20px 70px #14221c55;
+}
+
+#imageViewer::backdrop { background: #101915b8; }
+
+.viewer {
+  display: flex;
+  max-height: calc(100vh - 54px);
+  max-height: calc(100dvh - 54px);
+  flex-direction: column;
+}
+
+.viewer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+}
+
+.viewer-controls { display: flex; align-items: center; gap: 7px; }
+
+.viewer-hint {
+  color: #78837d;
+  font-size: 11px;
+}
+
+.viewer-controls button {
+  width: 38px;
+  min-height: 36px;
+  padding: 5px;
+  font-size: 18px;
+}
+
+.viewer-controls output {
+  min-width: 48px;
+  color: #59675f;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.viewer-controls .viewer-close {
+  margin-left: 5px;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.viewer-viewport {
+  overflow: auto;
+  max-height: calc(100vh - 112px);
+  max-height: calc(100dvh - 112px);
+  border: 1px solid #e5e9e5;
+  border-radius: 8px;
+  background: #fafbf9;
+}
+
+@media (pointer: coarse) {
+  .viewer-viewport { touch-action: none; }
+}
+
+.viewer-canvas {
+  display: flex;
+  min-width: 100%;
+  min-height: 100%;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8px;
+}
+
+.viewer-canvas svg {
+  display: block;
+  max-width: none;
+  height: auto;
+  flex: 0 0 auto;
 }
 
 @media (max-width: 760px) {
@@ -264,4 +358,6 @@ button:disabled { cursor: wait; opacity: .6; }
 @media (max-width: 420px) {
   .stage-top { align-items: start; flex-direction: column; gap: 7px; }
   .status { text-align: left; }
+  .viewer-top { align-items: stretch; flex-direction: column; gap: 10px; }
+  .viewer-controls { justify-content: flex-end; }
 }

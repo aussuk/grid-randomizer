@@ -25,7 +25,75 @@
       const modeHint = document.querySelector("#modeHint");
       const oppositeSidesHint = document.querySelector("#oppositeSidesHint");
       const crossingAngleHint = document.querySelector("#crossingAngleHint");
+      const imageViewer = document.querySelector("#imageViewer");
+      const viewerViewport = document.querySelector("#viewerViewport");
+      const viewerCanvas = document.querySelector("#viewerCanvas");
+      const zoomLevel = document.querySelector("#zoomLevel");
+      const zoomOutButton = document.querySelector("#zoomOutButton");
+      const zoomInButton = document.querySelector("#zoomInButton");
+      let viewerZoom = 1;
+      const activeTouches = new Map();
+      let pinchStart = null;
       let lastValid = null;
+
+      function updateViewerZoom() {
+        const viewerArtwork = viewerCanvas.querySelector("svg");
+        if (!viewerArtwork) return;
+        viewerArtwork.style.width = `${viewerViewport.clientWidth * viewerZoom}px`;
+        zoomLevel.value = `${Math.round(viewerZoom * 100)}%`;
+        zoomOutButton.disabled = viewerZoom <= .5;
+        zoomInButton.disabled = viewerZoom >= 4;
+      }
+
+      function zoomViewer(nextZoom, clientX, clientY) {
+        const artwork = viewerCanvas.querySelector("svg");
+        if (!artwork) return;
+        const next = Math.max(.5, Math.min(4, nextZoom));
+        if (next === viewerZoom) return;
+
+        const viewportRect = viewerViewport.getBoundingClientRect();
+        const artworkRect = artwork.getBoundingClientRect();
+        const anchorX = clientX - artworkRect.left;
+        const anchorY = clientY - artworkRect.top;
+        const anchorRatioX = artworkRect.width ? anchorX / artworkRect.width : .5;
+        const anchorRatioY = artworkRect.height ? anchorY / artworkRect.height : .5;
+        viewerZoom = next;
+        updateViewerZoom();
+
+        const scaledArtworkRect = artwork.getBoundingClientRect();
+        viewerViewport.scrollLeft += scaledArtworkRect.left + anchorRatioX * scaledArtworkRect.width - clientX;
+        viewerViewport.scrollTop += scaledArtworkRect.top + anchorRatioY * scaledArtworkRect.height - clientY;
+      }
+
+      function viewerCenter() {
+        const rect = viewerViewport.getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      }
+
+      function touchDistance(first, second) {
+        return Math.hypot(first.x - second.x, first.y - second.y);
+      }
+
+      function touchMidpoint(first, second) {
+        return { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 };
+      }
+
+      function syncViewerArtwork() {
+        if (!imageViewer.open) return;
+        const copy = svg.cloneNode(true);
+        copy.removeAttribute("id");
+        copy.setAttribute("role", "img");
+        copy.setAttribute("aria-label", "Enlarged organic grid preview");
+        for (const element of copy.querySelectorAll("[id]")) element.removeAttribute("id");
+        viewerCanvas.replaceChildren(copy);
+        updateViewerZoom();
+      }
+
+      function openImageViewer() {
+        viewerZoom = 1;
+        imageViewer.showModal();
+        syncViewerArtwork();
+      }
 
       const setStatus = (state, text) => {
         status.dataset.state = state;
@@ -1046,6 +1114,7 @@
           lineLayer.append(path);
         }
         document.querySelector("#faceCount").textContent = `${grid.faces.length} faces · ${grid.crossings} guaranteed crossings`;
+        syncViewerArtwork();
       }
 
       function generate() {
@@ -1181,6 +1250,62 @@
       document.querySelector("#randomizeButton").addEventListener("click", randomize);
       document.querySelector("#exportSvgButton").addEventListener("click", exportSvg);
       document.querySelector("#exportPngButton").addEventListener("click", exportPng);
+      svg.addEventListener("click", openImageViewer);
+      svg.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openImageViewer();
+        }
+      });
+      zoomOutButton.addEventListener("click", () => {
+        const center = viewerCenter();
+        zoomViewer(viewerZoom - .25, center.x, center.y);
+      });
+      zoomInButton.addEventListener("click", () => {
+        const center = viewerCenter();
+        zoomViewer(viewerZoom + .25, center.x, center.y);
+      });
+      viewerViewport.addEventListener("wheel", event => {
+        event.preventDefault();
+        zoomViewer(viewerZoom * Math.exp(-event.deltaY * .002), event.clientX, event.clientY);
+      }, { passive: false });
+      viewerViewport.addEventListener("pointerdown", event => {
+        if (event.pointerType !== "touch") return;
+        event.preventDefault();
+        viewerViewport.setPointerCapture(event.pointerId);
+        activeTouches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (activeTouches.size === 2) {
+          const [first, second] = [...activeTouches.values()];
+          pinchStart = { distance: touchDistance(first, second), zoom: viewerZoom };
+        }
+      });
+      viewerViewport.addEventListener("pointermove", event => {
+        if (!activeTouches.has(event.pointerId)) return;
+        const previous = activeTouches.get(event.pointerId);
+        activeTouches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (activeTouches.size >= 2 && pinchStart) {
+          const [first, second] = [...activeTouches.values()];
+          const distance = touchDistance(first, second);
+          if (pinchStart.distance > 0) {
+            const midpoint = touchMidpoint(first, second);
+            zoomViewer(pinchStart.zoom * distance / pinchStart.distance, midpoint.x, midpoint.y);
+          }
+        } else {
+          viewerViewport.scrollLeft -= event.clientX - previous.x;
+          viewerViewport.scrollTop -= event.clientY - previous.y;
+        }
+      });
+      const endViewerTouch = event => {
+        if (!activeTouches.delete(event.pointerId)) return;
+        pinchStart = null;
+      };
+      viewerViewport.addEventListener("pointerup", endViewerTouch);
+      viewerViewport.addEventListener("pointercancel", endViewerTouch);
+      document.querySelector("#closeViewerButton").addEventListener("click", () => imageViewer.close());
+      imageViewer.addEventListener("click", event => {
+        if (event.target === imageViewer) imageViewer.close();
+      });
+      window.addEventListener("resize", updateViewerZoom);
       updateModeControls();
       updateReadouts();
       generate();

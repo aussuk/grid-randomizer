@@ -87,7 +87,7 @@
           </div>
         </div>
         <div class="canvas-wrap">
-          <svg id="artwork" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" role="img" aria-label="Organic grid preview">
+          <svg id="artwork" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" role="button" tabindex="0" aria-label="Open enlarged organic grid preview">
             <rect id="backgroundRect" x="0" y="0" width="1000" height="700" fill="#f7f7f2"></rect>
             <g id="faceLayer"></g>
             <g id="lineLayer"></g>
@@ -100,6 +100,24 @@
       </section>
     </div>
   </main>
+
+  <dialog id="imageViewer" aria-label="Enlarged grid preview">
+    <div class="viewer">
+      <div class="viewer-top">
+        <span class="stage-label">Grid preview</span>
+        <span class="viewer-hint">Scroll or pinch to zoom · drag to pan</span>
+        <div class="viewer-controls" aria-label="Image zoom controls">
+          <button id="zoomOutButton" type="button" aria-label="Zoom out">−</button>
+          <output id="zoomLevel" aria-live="polite">100%</output>
+          <button id="zoomInButton" type="button" aria-label="Zoom in">+</button>
+          <button id="closeViewerButton" class="viewer-close" type="button" aria-label="Close enlarged preview">×</button>
+        </div>
+      </div>
+      <div id="viewerViewport" class="viewer-viewport">
+        <div id="viewerCanvas" class="viewer-canvas"></div>
+      </div>
+    </div>
+  </dialog>
 
   <script src="script.js" defer></script>
 </body>
